@@ -1,0 +1,54 @@
+spring:
+  application:
+    name: elastic-springboot
+
+  # Configuration Elasticsearch
+  elasticsearch:
+    rest:
+      uris: ${SPRING_ELASTICSEARCH_REST_URIS:http://localhost:9200}
+
+  # Configuration DataSource MySQL
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:elastic_db}?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC&createDatabaseIfNotExist=true
+    username: ${MYSQL_USER:springboot}
+    password: ${MYSQL_PASSWORD:springboot_password}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # Configuration JPA/Hibernate
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+
+  # Configuration Spring Data Elasticsearch
+  data:
+    elasticsearch:
+      repositories:
+        enabled: true
+
+# Logging
+logging:
+  level:
+    root: INFO
+    org.springframework.data: DEBUG
+    org.elasticsearch: DEBUG
+
+# Serveur
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always

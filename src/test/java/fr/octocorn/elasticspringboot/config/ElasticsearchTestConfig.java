@@ -1,14 +1,12 @@
 package fr.octocorn.elasticspringboot.config;
 
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
 import org.springframework.data.elasticsearch.client.ClientConfiguration;
 import org.springframework.data.elasticsearch.client.elc.ElasticsearchConfiguration;
 
 /**
- * Configuration pour les tests avec Elasticsearch
- *
- * Assurez-vous que Elasticsearch est en cours d'exécution sur localhost:9200
+ * Configuration Elasticsearch pour les tests.
+ * Requiert une instance Elasticsearch accessible sur localhost:9200.
  */
 @TestConfiguration
 public class ElasticsearchTestConfig extends ElasticsearchConfiguration {

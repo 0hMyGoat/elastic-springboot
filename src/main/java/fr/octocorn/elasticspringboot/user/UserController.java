@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -18,7 +19,7 @@ import java.util.UUID;
 
 @Tag(name = "Users", description = "Gestion des utilisateurs")
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/users")
 @RequiredArgsConstructor
 public class UserController {
 
@@ -26,7 +27,7 @@ public class UserController {
 
     @Operation(summary = "Lister les utilisateurs", description = "Retourne la liste paginée des utilisateurs.")
     @GetMapping
-    public Page<UserDTO> findAll(Pageable pageable) {
+    public Page<UserDTO> findAll(@ParameterObject Pageable pageable) {
         return userService.findAll(pageable);
     }
 

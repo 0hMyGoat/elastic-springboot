@@ -42,6 +42,12 @@ server:
   servlet:
     context-path: /api
 
+# Springdoc / Swagger
+springdoc:
+  swagger-ui:
+    path: /docs
+  pageable-type: SPRING_DATA_PAGEABLE
+
 # Actuator
 management:
   endpoints:

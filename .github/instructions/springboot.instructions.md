@@ -82,6 +82,7 @@ com.example.monprojet
 - **Langue du code** : anglais, sauf pour les noms de domaine métier qui restent en **français** (ex : `Commande`, `Produit`, `Facture`).
 - **Documentation** : toujours en **français**.
 - Utiliser des **mots complets**, jamais d'abréviations (`commande` et non `cmd`, `repository` et non `repo`).
+- N'utilise pas de préfixe pour les noms de classes (ex : `I` pour les interfaces, `Abstract` pour les classes abstraites, `E` ou `Enum` pour les enums) sauf cas exceptionnel pleinement justifié.
 - Les DTO sont des **records** suffixés par `DTO` :
 
 ```java

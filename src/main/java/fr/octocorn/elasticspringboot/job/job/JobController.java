@@ -5,6 +5,7 @@ import fr.octocorn.elasticspringboot.job.job.dto.JobDetailDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
@@ -13,7 +14,7 @@ import java.util.UUID;
 
 @Tag(name = "Jobs", description = "Référentiel des métiers")
 @RestController
-@RequestMapping("/api/jobs")
+@RequestMapping("/jobs")
 @RequiredArgsConstructor
 public class JobController {
 
@@ -21,7 +22,7 @@ public class JobController {
 
     @Operation(summary = "Lister les métiers", description = "Retourne la liste paginée des métiers avec leur secteur.")
     @GetMapping
-    public Page<JobDTO> findAll(Pageable pageable) {
+    public Page<JobDTO> findAll(@ParameterObject Pageable pageable) {
         return jobService.findAll(pageable);
     }
 

@@ -2,7 +2,8 @@ package fr.octocorn.elasticspringboot.user.infrastructure.elasticsearch;
 
 import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
-import fr.octocorn.elasticspringboot.user.application.query.UserSearchCriteria;
+import fr.octocorn.elasticspringboot.user.application.query.UserSearchCriteriaRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.stereotype.Component;
 
@@ -10,41 +11,48 @@ import org.springframework.stereotype.Component;
 public class UserSearchQueryBuilder {
 
     /**
-     * Construit la requête Elasticsearch native à partir des critères fournis.
+     * Construit une requête Elasticsearch full-text sur le prénom et le nom.
      *
-     * @param criteria critères de recherche
+     * @param query    texte libre de recherche
+     * @param pageable paramètres de pagination
      * @return la requête native Elasticsearch paginée
      */
-    public NativeQuery build(UserSearchCriteria criteria) {
+    public NativeQuery buildFullText(String query, Pageable pageable) {
+        BoolQuery.Builder bool = new BoolQuery.Builder();
+        ajouterRechercheLibre(bool, query);
         return NativeQuery.builder()
-                .withQuery(buildQuery(criteria))
-                .withPageable(criteria.toPageable())
+                .withQuery(Query.of(q -> q.bool(bool.build())))
+                .withPageable(pageable)
                 .build();
     }
 
-    private Query buildQuery(UserSearchCriteria criteria) {
+    /**
+     * Construit une requête Elasticsearch native à partir des critères structurés (POST body).
+     *
+     * @param criteria critères structurés de recherche
+     * @return la requête native Elasticsearch paginée
+     */
+    public NativeQuery buildFromRequest(UserSearchCriteriaRequest criteria) {
         BoolQuery.Builder bool = new BoolQuery.Builder();
 
-        if (!estVide(criteria.query())) {
-            ajouterRechercheLibre(bool, criteria.query());
-        } else {
-            ajouterFiltreFuzzy(bool, "firstName", criteria.firstName());
-            ajouterFiltreFuzzy(bool, "lastName", criteria.lastName());
-        }
-
+        ajouterFiltreFuzzy(bool, "firstName", criteria.firstName());
+        ajouterFiltreFuzzy(bool, "lastName", criteria.lastName());
         ajouterFiltreExact(bool, "city", criteria.city());
         ajouterFiltreExact(bool, "postalCode", criteria.postalCode());
         ajouterFiltreExact(bool, "jobName", criteria.jobName());
         ajouterFiltreExact(bool, "sectorName", criteria.sectorName());
 
-        return Query.of(q -> q.bool(bool.build()));
+        return NativeQuery.builder()
+                .withQuery(Query.of(q -> q.bool(bool.build())))
+                .withPageable(criteria.toPageable())
+                .build();
     }
 
     private void ajouterRechercheLibre(BoolQuery.Builder bool, String query) {
         if (estVide(query)) return;
         bool.must(q -> q.multiMatch(mm -> mm
                 .query(query)
-                .fields("firstName", "lastName")
+                .fields("firstName^3", "lastName^3", "jobName^2", "sectorName^2", "city")
                 .fuzziness("AUTO")
         ));
     }

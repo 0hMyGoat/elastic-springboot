@@ -36,7 +36,13 @@ public class UserDocument {
     private GeoPoint location;
 
     @Field(type = FieldType.Keyword)
+    private UUID jobId;
+
+    @Field(type = FieldType.Keyword)
     private String jobName;
+
+    @Field(type = FieldType.Keyword)
+    private UUID sectorId;
 
     @Field(type = FieldType.Keyword)
     private String sectorName;

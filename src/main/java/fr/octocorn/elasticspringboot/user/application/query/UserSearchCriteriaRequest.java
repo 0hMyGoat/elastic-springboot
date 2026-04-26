@@ -7,6 +7,8 @@ import jakarta.validation.constraints.Size;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import java.util.UUID;
+
 /**
  * Critères structurés de recherche d'utilisateurs, transmis en corps de requête POST.
  */
@@ -29,13 +31,11 @@ public record UserSearchCriteriaRequest(
         @Size(max = 10)
         String postalCode,
 
-        @Schema(description = "Filtre exact sur le métier", example = "Chef Cuisinier")
-        @Size(max = 100)
-        String jobName,
+        @Schema(description = "Filtre exact sur le métier (identifiant)", example = "d290f1ee-6c54-4b01-90e6-d701748f0851")
+        UUID jobId,
 
-        @Schema(description = "Filtre exact sur le secteur d'activité", example = "Restauration & Hôtellerie")
-        @Size(max = 100)
-        String sectorName,
+        @Schema(description = "Filtre exact sur le secteur d'activité (identifiant)", example = "a4f8e2b1-1234-5678-abcd-ef0123456789")
+        UUID sectorId,
 
         @Schema(description = "Numéro de page (0-based)", example = "0", defaultValue = "0")
         @Min(0)

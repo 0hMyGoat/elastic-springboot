@@ -7,6 +7,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.stereotype.Component;
 
+import java.util.UUID;
+
 @Component
 public class UserSearchQueryBuilder {
 
@@ -37,10 +39,10 @@ public class UserSearchQueryBuilder {
 
         ajouterFiltreFuzzy(bool, "firstName", criteria.firstName());
         ajouterFiltreFuzzy(bool, "lastName", criteria.lastName());
-        ajouterFiltreExact(bool, "city", criteria.city());
+        ajouterFiltreFuzzy(bool, "city", criteria.city());
         ajouterFiltreExact(bool, "postalCode", criteria.postalCode());
-        ajouterFiltreExact(bool, "jobName", criteria.jobName());
-        ajouterFiltreExact(bool, "sectorName", criteria.sectorName());
+        ajouterFiltreExactUuid(bool, "jobId", criteria.jobId());
+        ajouterFiltreExactUuid(bool, "sectorId", criteria.sectorId());
 
         return NativeQuery.builder()
                 .withQuery(Query.of(q -> q.bool(bool.build())))
@@ -71,6 +73,14 @@ public class UserSearchQueryBuilder {
         bool.filter(q -> q.term(t -> t
                 .field(champ)
                 .value(valeur)
+        ));
+    }
+
+    private void ajouterFiltreExactUuid(BoolQuery.Builder bool, String champ, UUID valeur) {
+        if (valeur == null) return;
+        bool.filter(q -> q.term(t -> t
+                .field(champ)
+                .value(valeur.toString())
         ));
     }
 

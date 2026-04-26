@@ -147,6 +147,37 @@
     .stat-value { font-size: 28px; color: var(--text-primary); font-weight: 500; }
     .stat-value.loading { color: var(--text-tertiary); font-size: 16px; }
 
+    /* ── Drawer ── */
+    .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+    .drawer-overlay.open { opacity: 1; pointer-events: all; }
+    .drawer { position: fixed; top: 0; right: 0; width: 480px; max-width: 100vw; height: 100vh; background: var(--surface); border-left: 1px solid var(--border); z-index: 101; display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.25s cubic-bezier(.4,0,.2,1); box-shadow: var(--shadow-md); overflow: hidden; }
+    .drawer.open { transform: translateX(0); }
+    .drawer-header { padding: 24px 28px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 16px; flex-shrink: 0; }
+    .drawer-avatar { width: 52px; height: 52px; border-radius: 50%; background: var(--accent-light); color: var(--accent-text); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 600; flex-shrink: 0; }
+    .drawer-identity { flex: 1; }
+    .drawer-name { font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+    .drawer-meta { font-size: 12px; color: var(--text-tertiary); line-height: 1.6; }
+    .drawer-close { background: none; border: none; color: var(--text-tertiary); cursor: pointer; padding: 6px; border-radius: var(--radius-sm); transition: color 0.1s, background 0.1s; flex-shrink: 0; }
+    .drawer-close:hover { color: var(--text-primary); background: var(--surface-alt); }
+    .drawer-body { flex: 1; overflow-y: auto; padding: 24px 28px; display: flex; flex-direction: column; gap: 24px; }
+    .drawer-section-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-tertiary); font-weight: 500; margin-bottom: 10px; }
+    .drawer-contact-group { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px 16px; margin-bottom: 8px; }
+    .drawer-contact-group:last-child { margin-bottom: 0; }
+    .drawer-contact-type { font-size: 11px; font-weight: 600; color: var(--accent-text); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+    .drawer-contact-label { font-size: 11px; color: var(--text-tertiary); font-style: italic; margin-bottom: 10px; }
+    .drawer-contact-row { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; line-height: 1.5; }
+    .drawer-contact-row:last-child { margin-bottom: 0; }
+    .drawer-contact-row svg { flex-shrink: 0; margin-top: 2px; color: var(--text-tertiary); }
+    .drawer-job { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px 16px; margin-bottom: 8px; display: flex; align-items: flex-start; gap: 12px; }
+    .drawer-job:last-child { margin-bottom: 0; }
+    .drawer-job-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 6px; }
+    .drawer-job-dot.primary { background: var(--accent); }
+    .drawer-job-dot.secondary { background: var(--border-strong); }
+    .drawer-job-name { font-size: 14px; font-weight: 500; color: var(--text-primary); margin-bottom: 3px; }
+    .drawer-job-sector { font-size: 12px; color: var(--accent-text); margin-bottom: 3px; }
+    .drawer-job-dates { font-size: 11px; color: var(--text-tertiary); }
+    .drawer-spinner { display: flex; align-items: center; justify-content: center; padding: 32px; }
+
     @media (max-width: 768px) {
       .sidebar { display: none; }
       .content { padding: 20px; }
@@ -385,6 +416,15 @@
   </main>
 </div>
 
+<!-- Drawer détail utilisateur -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="user-drawer">
+  <div class="drawer-header" id="drawer-header">
+    <div class="drawer-spinner"><div class="spinner"></div></div>
+  </div>
+  <div class="drawer-body" id="drawer-body"></div>
+</div>
+
 <script>
   // ── Config ──────────────────────────────────────────────
   const API = '';  // proxié par nginx vers localhost:8080
@@ -412,6 +452,7 @@
     document.getElementById('libre-input').addEventListener('keydown', e => {
       if (e.key === 'Enter') runLibre();
     });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
   });
 
   // ── Référentiels ────────────────────────────────────────
@@ -421,11 +462,8 @@
         fetch(`${API}/api/sectors?size=500&sort=name,asc`).then(r => r.json()),
         fetch(`${API}/api/jobs?size=500&sort=name,asc`).then(r => r.json())
       ]);
-
       const sectors = sectorsData.content || [];
       allJobs = jobsData.content || [];
-
-      // Peupler le select secteurs
       const sectorSelect = document.getElementById('c-sector');
       sectors.forEach(s => {
         const opt = document.createElement('option');
@@ -433,19 +471,10 @@
         opt.textContent = s.name;
         sectorSelect.appendChild(opt);
       });
-
-      // Peupler le select métiers
       populateJobs('');
-
-      // Filtrer les métiers au changement de secteur
-      sectorSelect.addEventListener('change', () => {
-        populateJobs(sectorSelect.value);
-      });
-
-      // Afficher les référentiels dans leurs panels
+      sectorSelect.addEventListener('change', () => populateJobs(sectorSelect.value));
       renderSecteurs(sectors);
       renderMetiers(allJobs);
-
     } catch (e) {
       console.warn('Erreur chargement référentiels', e);
     }
@@ -462,9 +491,7 @@
       opt.textContent = j.name;
       jobSelect.appendChild(opt);
     });
-    if (currentJobId && filtered.find(j => j.id === currentJobId)) {
-      jobSelect.value = currentJobId;
-    }
+    if (currentJobId && filtered.find(j => j.id === currentJobId)) jobSelect.value = currentJobId;
   }
 
   function renderSecteurs(sectors) {
@@ -521,13 +548,9 @@
       document.getElementById('stat-users').textContent = (usersRes.totalElements || 0).toLocaleString('fr-FR');
       document.getElementById('stat-sectors').textContent = sectorsRes.totalElements || 0;
       document.getElementById('stat-jobs').textContent = jobsRes.totalElements || 0;
-      document.getElementById('stat-users').classList.remove('loading');
-      document.getElementById('stat-sectors').classList.remove('loading');
-      document.getElementById('stat-jobs').classList.remove('loading');
+      ['stat-users','stat-sectors','stat-jobs'].forEach(id => document.getElementById(id).classList.remove('loading'));
     } catch (e) {
-      ['stat-users', 'stat-sectors', 'stat-jobs'].forEach(id => {
-        document.getElementById(id).textContent = '—';
-      });
+      ['stat-users','stat-sectors','stat-jobs'].forEach(id => document.getElementById(id).textContent = '—');
     }
   }
 
@@ -539,32 +562,27 @@
     btn.disabled = true;
     setLoading('results-libre');
     try {
-      const url = `${API}/api/users/search?query=${encodeURIComponent(q)}&page=${page}&size=20`;
-      const data = await fetch(url).then(r => r.json());
+      const data = await fetch(`${API}/api/users/search?query=${encodeURIComponent(q)}&page=${page}&size=20`).then(r => r.json());
       renderResults(data, 'results-libre', p => runLibre(p));
-    } catch (e) {
-      setError('results-libre');
-    } finally {
-      btn.disabled = false;
-    }
+    } catch (e) { setError('results-libre'); }
+    finally { btn.disabled = false; }
   }
 
   // ── Recherche par critères ───────────────────────────────
   async function runCriteres(page = 0) {
     const body = { page, size: 20 };
-    const fn     = document.getElementById('c-fn').value.trim();
-    const ln     = document.getElementById('c-ln').value.trim();
-    const city   = document.getElementById('c-city').value.trim();
+    const fn = document.getElementById('c-fn').value.trim();
+    const ln = document.getElementById('c-ln').value.trim();
+    const city = document.getElementById('c-city').value.trim();
     const postal = document.getElementById('c-postal').value.trim();
     const sectorId = document.getElementById('c-sector').value;
-    const jobId    = document.getElementById('c-job').value;
+    const jobId = document.getElementById('c-job').value;
     if (fn) body.firstName = fn;
     if (ln) body.lastName = ln;
     if (city) body.city = city;
     if (postal) body.postalCode = postal;
     if (sectorId) body.sectorId = sectorId;
     if (jobId) body.jobId = jobId;
-
     const btn = document.getElementById('btn-criteres');
     btn.disabled = true;
     setLoading('results-criteres');
@@ -575,11 +593,8 @@
         body: JSON.stringify(body)
       }).then(r => r.json());
       renderResults(data, 'results-criteres', p => runCriteres(p));
-    } catch (e) {
-      setError('results-criteres');
-    } finally {
-      btn.disabled = false;
-    }
+    } catch (e) { setError('results-criteres'); }
+    finally { btn.disabled = false; }
   }
 
   function resetCriteres() {
@@ -596,11 +611,7 @@
     const total = page.totalElements || 0;
     const totalPages = page.totalPages || 0;
     const currentPage = page.number || 0;
-
-    if (!users.length) {
-      container.innerHTML = emptyHtml('Aucun résultat', 'Essayez d\'élargir vos critères.');
-      return;
-    }
+    if (!users.length) { container.innerHTML = emptyHtml('Aucun résultat', "Essayez d'élargir vos critères."); return; }
 
     let html = `
       <div class="results-bar">
@@ -613,7 +624,7 @@
       const email = u.emails?.[0] || '';
       const phone = u.phones?.[0] || '';
       html += `
-        <div class="result-card">
+        <div class="result-card" onclick="openDrawer('${u.id}')">
           <div class="avatar">${initials}</div>
           <div class="result-info">
             <div class="result-name">${u.firstName || ''} ${u.lastName || ''}</div>
@@ -633,66 +644,182 @@
         </div>`;
     });
 
-    html += `</div>`;
-    html += buildPagination(currentPage, totalPages, onPageChange);
+    html += `</div>` + buildPagination(currentPage, totalPages, onPageChange);
     container.innerHTML = html;
   }
 
   function buildPagination(current, total, onPageChange) {
     if (total <= 1) return '';
-
-    const prevDisabled = current === 0 ? 'disabled' : '';
-    const nextDisabled = current >= total - 1 ? 'disabled' : '';
-
-    // Afficher au plus 7 boutons de pages
     let pages = [];
-    const range = 2;
     for (let i = 0; i < total; i++) {
-      if (i === 0 || i === total - 1 || (i >= current - range && i <= current + range)) {
-        pages.push(i);
-      }
+      if (i === 0 || i === total - 1 || (i >= current - 2 && i <= current + 2)) pages.push(i);
     }
-    // Dédupliquer et trier
     pages = [...new Set(pages)].sort((a, b) => a - b);
-
     let html = `<div class="pagination">
-      <button class="page-btn" ${prevDisabled} onclick="(${onPageChange.toString()})(${current - 1})">
+      <button class="page-btn" ${current === 0 ? 'disabled' : ''} onclick="(${onPageChange.toString()})(${current - 1})">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m8 2-4 4 4 4"/></svg>
       </button>`;
-
     let last = -1;
     pages.forEach(p => {
-      if (last !== -1 && p > last + 1) {
-        html += `<span style="color:var(--text-tertiary);padding:0 4px;">…</span>`;
-      }
+      if (last !== -1 && p > last + 1) html += `<span style="color:var(--text-tertiary);padding:0 4px;">…</span>`;
       html += `<button class="page-btn ${p === current ? 'active' : ''}" onclick="(${onPageChange.toString()})(${p})">${p + 1}</button>`;
       last = p;
     });
-
-    html += `<button class="page-btn" ${nextDisabled} onclick="(${onPageChange.toString()})(${current + 1})">
+    html += `<button class="page-btn" ${current >= total - 1 ? 'disabled' : ''} onclick="(${onPageChange.toString()})(${current + 1})">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m4 2 4 4-4 4"/></svg>
-      </button>
-    </div>`;
-
+      </button></div>`;
     return html;
+  }
+
+  // ── Drawer détail ────────────────────────────────────────
+  async function openDrawer(userId) {
+    document.getElementById('drawer-overlay').classList.add('open');
+    document.getElementById('user-drawer').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    // Reset état chargement
+    document.getElementById('drawer-header').innerHTML =
+      `<div class="drawer-spinner"><div class="spinner"></div></div>`;
+    document.getElementById('drawer-body').innerHTML = '';
+    try {
+      const u = await fetch(`${API}/api/users/${userId}`).then(r => r.json());
+      renderDrawer(u);
+    } catch (e) {
+      document.getElementById('drawer-header').innerHTML =
+        `<div class="error-state" style="margin:0">Impossible de charger le détail.</div>`;
+    }
+  }
+
+  function closeDrawer() {
+    document.getElementById('drawer-overlay').classList.remove('open');
+    document.getElementById('user-drawer').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  function renderDrawer(u) {
+    const initials = (u.firstName?.[0] || '') + (u.lastName?.[0] || '');
+    const birth = u.birthDate
+      ? new Date(u.birthDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+      : null;
+    const registered = u.registeredAt
+      ? new Date(u.registeredAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+      : null;
+
+    // Header
+    document.getElementById('drawer-header').innerHTML = `
+      <div class="drawer-avatar">${initials}</div>
+      <div class="drawer-identity">
+        <div class="drawer-name">${u.firstName} ${u.lastName}</div>
+        <div class="drawer-meta">
+          ${birth ? `Né·e le ${birth}` : ''}
+          ${birth && registered ? '<br>' : ''}
+          ${registered ? `Inscrit·e le ${registered}` : ''}
+        </div>
+      </div>
+      <button class="drawer-close" onclick="closeDrawer()">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M4 4l10 10M14 4L4 14"/>
+        </svg>
+      </button>`;
+
+    let body = '';
+
+    // ── Emplois ──────────────────────────────────────────
+    const jobs = [...(u.userJobs || [])].sort((a, b) => (b.primaryJob ? 1 : 0) - (a.primaryJob ? 1 : 0));
+    if (jobs.length) {
+      body += `<div>
+        <p class="drawer-section-title">Emplois (${jobs.length})</p>`;
+      jobs.forEach(j => {
+        const fmt = d => d ? new Date(d).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' }) : null;
+        const start = fmt(j.startDate);
+        const end = j.endDate ? fmt(j.endDate) : "aujourd'hui";
+        const dateStr = start ? `${start} → ${end}` : null;
+        body += `
+          <div class="drawer-job">
+            <div class="drawer-job-dot ${j.primaryJob ? 'primary' : 'secondary'}"></div>
+            <div>
+              <div class="drawer-job-name">
+                ${j.jobName}
+                ${j.primaryJob ? '<span style="font-size:10px;color:var(--accent-text);margin-left:6px;">★ Principal</span>' : ''}
+              </div>
+              <div class="drawer-job-sector">${j.sectorName}</div>
+              ${dateStr ? `<div class="drawer-job-dates">${dateStr}</div>` : ''}
+            </div>
+          </div>`;
+      });
+      body += `</div>`;
+    }
+
+    // ── Coordonnées (une fiche par ContactInfo) ───────────
+    const contacts = u.contactInfos || [];
+    if (contacts.length) {
+      body += `<div>
+        <p class="drawer-section-title">Coordonnées (${contacts.length} fiche${contacts.length > 1 ? 's' : ''})</p>`;
+      contacts.forEach(c => {
+        body += `<div class="drawer-contact-group">
+          <div class="drawer-contact-type">${formatContactType(c.type)}</div>
+          ${c.label ? `<div class="drawer-contact-label">${c.label}</div>` : ''}`;
+
+        // Adresses
+        (c.addresses || []).forEach(a => {
+          const lines = [a.streetLine1, a.streetLine2, [a.city, a.postalCode].filter(Boolean).join(' '), a.state, a.country].filter(Boolean);
+          body += `<div class="drawer-contact-row">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M6.5 1C4.57 1 3 2.57 3 4.5c0 2.84 3.5 7.5 3.5 7.5S10 7.34 10 4.5C10 2.57 8.43 1 6.5 1z"/>
+              <circle cx="6.5" cy="4.5" r="1.3"/>
+            </svg>
+            <span>${lines.join(', ')}</span>
+          </div>`;
+        });
+
+        // Emails
+        (c.emails || []).forEach(e => {
+          body += `<div class="drawer-contact-row">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="1" y="3" width="11" height="7" rx="1"/>
+              <path d="M1 3.5l5.5 3.5L12 3.5"/>
+            </svg>
+            <span style="color:var(--info-text)">${e.email}</span>
+          </div>`;
+        });
+
+        // Téléphones
+        (c.phones || []).forEach(p => {
+          body += `<div class="drawer-contact-row">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M2 1.5h2.5L6 4.5 4.5 5.5C5.3 7.1 6.9 8.7 8.5 9.5l1-1.5 3 1.5V12c0 .28-.22.5-.5.5C5.4 12.5.5 7.6.5 1.5c0-.28.22-.5.5-.5z"/>
+            </svg>
+            <span>${p.number}${p.type ? `<span style="font-size:11px;color:var(--text-tertiary);margin-left:5px;">(${formatPhoneType(p.type)})</span>` : ''}</span>
+          </div>`;
+        });
+
+        body += `</div>`;
+      });
+      body += `</div>`;
+    }
+
+    document.getElementById('drawer-body').innerHTML =
+      body || `<p style="color:var(--text-tertiary);font-size:13px;">Aucune information disponible.</p>`;
+  }
+
+  function formatContactType(type) {
+    const map = { WORK_PRIMARY: 'Pro. principal', WORK_SECONDARY: 'Pro. secondaire', PERSONAL: 'Personnel', OTHER: 'Autre' };
+    return map[type] || type;
+  }
+
+  function formatPhoneType(type) {
+    const map = { MOBILE: 'Mobile', HOME: 'Domicile', WORK: 'Bureau', FAX: 'Fax' };
+    return map[type] || type;
   }
 
   // ── Helpers ─────────────────────────────────────────────
   function setLoading(containerId) {
-    document.getElementById(containerId).innerHTML = `
-      <div class="loading-state">
-        <div class="spinner"></div>
-        <p>Recherche en cours…</p>
-      </div>`;
+    document.getElementById(containerId).innerHTML =
+      `<div class="loading-state"><div class="spinner"></div><p>Recherche en cours…</p></div>`;
   }
-
   function setError(containerId) {
-    document.getElementById(containerId).innerHTML = `
-      <div class="error-state">
-        Impossible de contacter l'API. Vérifiez que Spring Boot est démarré sur le port 8080.
-      </div>`;
+    document.getElementById(containerId).innerHTML =
+      `<div class="error-state">Impossible de contacter l'API. Vérifiez que Spring Boot est démarré sur le port 8080.</div>`;
   }
-
   function emptyHtml(title, sub) {
     return `<div class="empty-state">
       <div class="empty-icon">
@@ -708,4 +835,6 @@
 
 </body>
 </html>
+
+
 

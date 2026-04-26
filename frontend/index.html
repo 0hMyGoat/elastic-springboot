@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
@@ -7,6 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -191,6 +193,101 @@
     ::-webkit-scrollbar-track { background: var(--bg); }
     ::-webkit-scrollbar-thumb { background: var(--surface-alt); border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
+
+    /* ── Carte ── */
+    #panel-carte.active {
+      display: flex;
+      flex-direction: column;
+      margin: -32px;
+      height: calc(100vh - 57px);
+      overflow: hidden;
+    }
+    .map-filters {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+    .map-filters .select-wrap { min-width: 180px; }
+    .map-filters .select-wrap select { width: 100%; padding: 8px 32px 8px 12px; font-size: 13px; }
+    .map-precision-badge {
+      margin-left: auto;
+      font-size: 11px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      background: var(--info-bg);
+      color: var(--info-text);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .map-body { flex: 1; display: flex; overflow: hidden; min-height: 0; }
+    #leaflet-map { flex: 1; min-width: 0; }
+    .map-side-panel {
+      width: 0;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      overflow: hidden;
+      transition: width 0.25s cubic-bezier(.4,0,.2,1);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+    .map-side-panel.open { width: 340px; }
+    .map-side-inner { width: 340px; height: 100%; overflow-y: auto; display: flex; flex-direction: column; }
+    .map-side-header {
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .map-side-title { font-size: 14px; font-weight: 600; color: var(--text-primary); flex: 1; }
+    .map-side-count { font-size: 12px; color: var(--text-tertiary); }
+    .map-side-close {
+      background: none; border: none; color: var(--text-tertiary); cursor: pointer;
+      padding: 4px; border-radius: var(--radius-sm); transition: color 0.1s, background 0.1s;
+    }
+    .map-side-close:hover { color: var(--text-primary); background: var(--surface-alt); }
+    .map-side-list { padding: 12px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+    .map-side-list .result-card { padding: 12px 14px; }
+
+    /* Leaflet overrides */
+    .leaflet-container { background: #1a1e26; font-family: 'Montserrat', sans-serif; }
+    .leaflet-popup-content-wrapper { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); color: var(--text-primary); box-shadow: var(--shadow-md); }
+    .leaflet-popup-tip { background: var(--surface); }
+    .leaflet-tooltip { background: var(--surface); border: 1px solid var(--border); color: var(--text-primary); font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 500; padding: 5px 10px; border-radius: var(--radius-sm); box-shadow: var(--shadow-sm); }
+    .leaflet-tooltip::before { border-top-color: var(--border); }
+    .leaflet-bar a { background: var(--surface); color: var(--text-primary); border-color: var(--border); }
+    .leaflet-bar a:hover { background: var(--surface-alt); }
+    .map-cluster-icon { background: none !important; border: none !important; }
+    .map-cluster-inner {
+      border-radius: 50%;
+      background: rgba(193,84,81,0.75);
+      border: 2px solid rgba(255,255,255,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+    .map-cluster-inner:hover { background: rgba(193,84,81,0.95); transform: scale(1.08); }
+    .map-cluster-inner span { color: #fff; font-family: 'Montserrat', sans-serif; font-weight: 700; line-height: 1; pointer-events: none; }
+    .map-individual-icon { background: none !important; border: none !important; }
+    .map-individual-dot {
+      width: 12px; height: 12px; border-radius: 50%;
+      background: rgba(193,84,81,0.9);
+      border: 2px solid rgba(255,255,255,0.4);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.6);
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .map-individual-dot:hover { background: rgb(193,84,81); transform: scale(1.4); }
   </style>
 </head>
 <body>
@@ -222,7 +319,6 @@
           <circle cx="9" cy="6" r="2"/>
         </svg>
         Carte du Québec
-        <span class="nav-badge">Bientôt</span>
       </button>
     </div>
 
@@ -382,18 +478,43 @@
 
       <!-- Panel: Carte -->
       <div class="panel" id="panel-carte">
-        <div class="map-card">
-          <div class="map-topbar">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
-              <path d="M8 1C5.24 1 3 3.24 3 6c0 4.13 5 9 5 9s5-4.87 5-9c0-2.76-2.24-5-5-5z"/>
-              <circle cx="8" cy="6" r="2"/>
-            </svg>
-            <span style="font-size:14px;font-weight:500;">Recherche géographique — Québec</span>
-            <span style="margin-left:auto;font-size:12px;background:var(--warn-bg);color:var(--warn-text);padding:3px 10px;border-radius:20px;">En développement</span>
+        <!-- Barre de filtres -->
+        <div class="map-filters">
+          <div class="select-wrap">
+            <select id="map-sector">
+              <option value="">Tous les secteurs</option>
+            </select>
           </div>
-          <div class="map-area">
-            <div class="map-badge"><span class="dot-pulse"></span> Fonctionnalité à venir</div>
-            <p class="map-desc">Sélectionnez une zone sur la carte du Québec pour filtrer les utilisateurs par région géographique.</p>
+          <div class="select-wrap">
+            <select id="map-job">
+              <option value="">Tous les métiers</option>
+            </select>
+          </div>
+          <button class="btn btn-ghost" style="font-size:12px;padding:7px 14px;" onclick="resetMapFilters()">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.7">
+              <path d="M11 6.5A4.5 4.5 0 1 1 6.5 2a4.48 4.48 0 0 1 3.18 1.32"/>
+              <path d="M9.5 1.5v2.5H7"/>
+            </svg>
+            Réinitialiser
+          </button>
+          <span class="map-precision-badge" id="map-precision-label">Regroupé par ville</span>
+        </div>
+        <!-- Carte + panneau latéral -->
+        <div class="map-body">
+          <div id="leaflet-map"></div>
+          <div class="map-side-panel" id="map-side-panel">
+            <div class="map-side-inner">
+              <div class="map-side-header">
+                <span class="map-side-title" id="map-side-title">—</span>
+                <span class="map-side-count" id="map-side-count"></span>
+                <button class="map-side-close" onclick="closeMapSidePanel()" title="Fermer">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M3 3l10 10M13 3L3 13"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="map-side-list" id="map-side-content"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -429,7 +550,7 @@
   // ── Config ──────────────────────────────────────────────
   const API = '';  // proxié par nginx vers localhost:8080
 
-  // ── État ────────────────────────────────────────────────
+  // ── État global ─────────────────────────────────────────
   let allJobs = [];
 
   // ── Navigation ──────────────────────────────────────────
@@ -443,6 +564,14 @@
       carte: 'Carte du Québec', secteurs: 'Secteurs', metiers: 'Métiers'
     };
     document.getElementById('topbar-sub').textContent = labels[id] || id;
+    // Masquer la stats-bar sur la carte pour maximiser l'espace
+    document.querySelector('.stats-bar').style.display = id === 'carte' ? 'none' : '';
+    if (id === 'carte') {
+      requestAnimationFrame(() => {
+        if (!mapInstance) initMap();
+        else mapInstance.invalidateSize();
+      });
+    }
   }
 
   // ── Initialisation ──────────────────────────────────────
@@ -464,15 +593,26 @@
       ]);
       const sectors = sectorsData.content || [];
       allJobs = jobsData.content || [];
+
+      // Recherche critères
       const sectorSelect = document.getElementById('c-sector');
       sectors.forEach(s => {
         const opt = document.createElement('option');
-        opt.value = s.id;
-        opt.textContent = s.name;
+        opt.value = s.id; opt.textContent = s.name;
         sectorSelect.appendChild(opt);
       });
       populateJobs('');
       sectorSelect.addEventListener('change', () => populateJobs(sectorSelect.value));
+
+      // Carte
+      const mapSectorSelect = document.getElementById('map-sector');
+      sectors.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.id; opt.textContent = s.name;
+        mapSectorSelect.appendChild(opt);
+      });
+      populateMapJobs('');
+
       renderSecteurs(sectors);
       renderMetiers(allJobs);
     } catch (e) {
@@ -487,11 +627,21 @@
     const filtered = sectorId ? allJobs.filter(j => j.sectorId === sectorId) : allJobs;
     filtered.forEach(j => {
       const opt = document.createElement('option');
-      opt.value = j.id;
-      opt.textContent = j.name;
+      opt.value = j.id; opt.textContent = j.name;
       jobSelect.appendChild(opt);
     });
     if (currentJobId && filtered.find(j => j.id === currentJobId)) jobSelect.value = currentJobId;
+  }
+
+  function populateMapJobs(sectorId) {
+    const jobSelect = document.getElementById('map-job');
+    jobSelect.innerHTML = '<option value="">Tous les métiers</option>';
+    const filtered = sectorId ? allJobs.filter(j => j.sectorId === sectorId) : allJobs;
+    filtered.forEach(j => {
+      const opt = document.createElement('option');
+      opt.value = j.id; opt.textContent = j.name;
+      jobSelect.appendChild(opt);
+    });
   }
 
   function renderSecteurs(sectors) {
@@ -629,7 +779,7 @@
           <div class="result-info">
             <div class="result-name">${u.firstName || ''} ${u.lastName || ''}</div>
             <div class="result-tags">
-              ${u.city ? `<span class="tag">${u.city}</span>` : ''}
+              ${u.city ? `<span class="tag">${formatLabel(u.city)}</span>` : ''}
               ${u.sectorName ? `<span class="tag accent">${u.sectorName}</span>` : ''}
               ${u.jobName ? `<span class="tag">${u.jobName}</span>` : ''}
             </div>
@@ -671,12 +821,197 @@
     return html;
   }
 
-  // ── Drawer détail ────────────────────────────────────────
+  // ── Carte Leaflet ────────────────────────────────────────
+  let mapInstance = null;
+  let mapMarkers = [];
+  let mapDebounceTimer = null;
+  let mapJobId = '';
+  let mapSectorId = '';
+
+  const ZOOM_CITY        = 8;   // zoom ≤ 8  → CITY
+  const ZOOM_POSTAL_CODE = 12;  // zoom 9–12 → POSTAL_CODE
+                                 // zoom ≥ 13 → INDIVIDUAL
+
+  function getPrecision(zoom) {
+    if (zoom >= 13) return 'INDIVIDUAL';
+    if (zoom >= 9)  return 'POSTAL_CODE';
+    return 'CITY';
+  }
+
+  function getPrecisionLabel(p) {
+    return { CITY: 'Regroupé par ville', POSTAL_CODE: 'Regroupé par code postal', INDIVIDUAL: 'Individuel' }[p] || p;
+  }
+
+  function initMap() {
+    if (mapInstance) return;
+
+    mapInstance = L.map('leaflet-map', { zoomControl: true })
+        .setView([53.0, -72.0], 6);   // Centre du Québec
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+      subdomains: 'abcd',
+      maxZoom: 19
+    }).addTo(mapInstance);
+
+    mapInstance.on('moveend zoomend', () => {
+      clearTimeout(mapDebounceTimer);
+      mapDebounceTimer = setTimeout(loadMapClusters, 450);
+    });
+
+    // Fermer le side panel si on clique sur la carte
+    mapInstance.on('click', () => closeMapSidePanel());
+
+    // Filtres carte
+    document.getElementById('map-sector').addEventListener('change', function () {
+      mapSectorId = this.value;
+      populateMapJobs(this.value);
+      mapJobId = '';
+      loadMapClusters();
+    });
+    document.getElementById('map-job').addEventListener('change', function () {
+      mapJobId = this.value;
+      loadMapClusters();
+    });
+
+    loadMapClusters();
+  }
+
+  async function loadMapClusters() {
+    if (!mapInstance) return;
+
+    const zoom      = mapInstance.getZoom();
+    const precision = getPrecision(zoom);
+    document.getElementById('map-precision-label').textContent = getPrecisionLabel(precision);
+
+    const bounds = mapInstance.getBounds();
+    let url = `${API}/api/users/map/clusters?precision=${precision}`;
+    if (mapJobId)    url += `&jobId=${mapJobId}`;
+    if (mapSectorId) url += `&sectorId=${mapSectorId}`;
+    if (precision === 'INDIVIDUAL') {
+      url += `&minLat=${bounds.getSouth()}&maxLat=${bounds.getNorth()}`
+           + `&minLon=${bounds.getWest()}&maxLon=${bounds.getEast()}`;
+    }
+
+    try {
+      const points = await fetch(url).then(r => r.json());
+      renderMapPoints(points, precision);
+    } catch (e) {
+      console.error('[Map] Erreur chargement clusters', e);
+    }
+  }
+
+  function renderMapPoints(points, precision) {
+    mapMarkers.forEach(m => mapInstance.removeLayer(m));
+    mapMarkers = [];
+
+    points.forEach(p => {
+      let marker;
+      if (precision === 'INDIVIDUAL') {
+        const icon = L.divIcon({
+          className: 'map-individual-icon',
+          html: `<div class="map-individual-dot"></div>`,
+          iconSize: [12, 12],
+          iconAnchor: [6, 6]
+        });
+        marker = L.marker([p.lat, p.lon], { icon });
+        marker.bindTooltip(formatLabel(p.label), { direction: 'top', offset: [0, -8] });
+        marker.on('click', e => { L.DomEvent.stopPropagation(e); openDrawer(p.userId); });
+      } else {
+        // Rayon proportionnel au nombre de personnes
+        const r = Math.round(Math.min(10 + Math.sqrt(p.count) * 2.2, 42));
+        const fontSize = Math.max(9, Math.min(14, r / 2.2)).toFixed(0);
+        const label = p.count > 999 ? '999+' : p.count;
+        const icon = L.divIcon({
+          className: 'map-cluster-icon',
+          html: `<div class="map-cluster-inner" style="width:${r*2}px;height:${r*2}px;">
+                   <span style="font-size:${fontSize}px;">${label}</span>
+                 </div>`,
+          iconSize: [r * 2, r * 2],
+          iconAnchor: [r, r]
+        });
+        marker = L.marker([p.lat, p.lon], { icon });
+        const tooltip = `<strong>${formatLabel(p.label)}</strong><br>${p.count} personne${p.count > 1 ? 's' : ''}`;
+        marker.bindTooltip(tooltip, { direction: 'top', offset: [0, -r - 4] });
+        marker.on('click', e => {
+          L.DomEvent.stopPropagation(e);
+          loadClusterUsers(precision, p.label, formatLabel(p.label), p.count);
+        });
+      }
+      marker.addTo(mapInstance);
+      mapMarkers.push(marker);
+    });
+  }
+
+  // ── Panneau latéral (liste des membres d'un cluster) ─────
+  async function loadClusterUsers(precision, rawValue, displayLabel, count) {
+    openMapSidePanel(displayLabel, count);
+    document.getElementById('map-side-content').innerHTML =
+      `<div class="loading-state"><div class="spinner"></div><p>Chargement…</p></div>`;
+
+    let url = `${API}/api/users/map/cluster-users?precision=${precision}&value=${encodeURIComponent(rawValue)}`;
+    if (mapJobId)    url += `&jobId=${mapJobId}`;
+    if (mapSectorId) url += `&sectorId=${mapSectorId}`;
+
+    try {
+      const users = await fetch(url).then(r => r.json());
+      renderMapSidePanel(users);
+    } catch (e) {
+      document.getElementById('map-side-content').innerHTML =
+        `<div class="error-state">Impossible de charger les utilisateurs.</div>`;
+    }
+  }
+
+  function renderMapSidePanel(users) {
+    if (!users.length) {
+      document.getElementById('map-side-content').innerHTML = emptyHtml('Aucun résultat', '');
+      return;
+    }
+    let html = '';
+    users.forEach(u => {
+      const initials = (u.firstName?.[0] || '') + (u.lastName?.[0] || '');
+      html += `
+        <div class="result-card" onclick="openDrawer('${u.id}')">
+          <div class="avatar">${initials}</div>
+          <div class="result-info">
+            <div class="result-name">${u.firstName || ''} ${u.lastName || ''}</div>
+            <div class="result-tags">
+              ${u.sectorName ? `<span class="tag accent">${u.sectorName}</span>` : ''}
+              ${u.jobName    ? `<span class="tag">${u.jobName}</span>`           : ''}
+            </div>
+          </div>
+          <svg class="chevron-right" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m5 2 4 5-4 5"/></svg>
+        </div>`;
+    });
+    document.getElementById('map-side-content').innerHTML = html;
+  }
+
+  function openMapSidePanel(label, count) {
+    document.getElementById('map-side-title').textContent = label || '—';
+    document.getElementById('map-side-count').textContent = count != null ? `${count} pers.` : '';
+    document.getElementById('map-side-panel').classList.add('open');
+    setTimeout(() => mapInstance && mapInstance.invalidateSize(), 280);
+  }
+
+  function closeMapSidePanel() {
+    document.getElementById('map-side-panel').classList.remove('open');
+    setTimeout(() => mapInstance && mapInstance.invalidateSize(), 280);
+  }
+
+  function resetMapFilters() {
+    document.getElementById('map-sector').value = '';
+    document.getElementById('map-job').value = '';
+    mapSectorId = '';
+    mapJobId = '';
+    populateMapJobs('');
+    loadMapClusters();
+  }
+
+  // ── Drawer détail utilisateur ────────────────────────────
   async function openDrawer(userId) {
     document.getElementById('drawer-overlay').classList.add('open');
     document.getElementById('user-drawer').classList.add('open');
     document.body.style.overflow = 'hidden';
-    // Reset état chargement
     document.getElementById('drawer-header').innerHTML =
       `<div class="drawer-spinner"><div class="spinner"></div></div>`;
     document.getElementById('drawer-body').innerHTML = '';
@@ -704,7 +1039,6 @@
       ? new Date(u.registeredAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
       : null;
 
-    // Header
     document.getElementById('drawer-header').innerHTML = `
       <div class="drawer-avatar">${initials}</div>
       <div class="drawer-identity">
@@ -723,11 +1057,9 @@
 
     let body = '';
 
-    // ── Emplois ──────────────────────────────────────────
     const jobs = [...(u.userJobs || [])].sort((a, b) => (b.primaryJob ? 1 : 0) - (a.primaryJob ? 1 : 0));
     if (jobs.length) {
-      body += `<div>
-        <p class="drawer-section-title">Emplois (${jobs.length})</p>`;
+      body += `<div><p class="drawer-section-title">Emplois (${jobs.length})</p>`;
       jobs.forEach(j => {
         const fmt = d => d ? new Date(d).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' }) : null;
         const start = fmt(j.startDate);
@@ -749,17 +1081,13 @@
       body += `</div>`;
     }
 
-    // ── Coordonnées (une fiche par ContactInfo) ───────────
     const contacts = u.contactInfos || [];
     if (contacts.length) {
-      body += `<div>
-        <p class="drawer-section-title">Coordonnées (${contacts.length} fiche${contacts.length > 1 ? 's' : ''})</p>`;
+      body += `<div><p class="drawer-section-title">Coordonnées (${contacts.length} fiche${contacts.length > 1 ? 's' : ''})</p>`;
       contacts.forEach(c => {
         body += `<div class="drawer-contact-group">
           <div class="drawer-contact-type">${formatContactType(c.type)}</div>
           ${c.label ? `<div class="drawer-contact-label">${c.label}</div>` : ''}`;
-
-        // Adresses
         (c.addresses || []).forEach(a => {
           const lines = [a.streetLine1, a.streetLine2, [a.city, a.postalCode].filter(Boolean).join(' '), a.state, a.country].filter(Boolean);
           body += `<div class="drawer-contact-row">
@@ -770,8 +1098,6 @@
             <span>${lines.join(', ')}</span>
           </div>`;
         });
-
-        // Emails
         (c.emails || []).forEach(e => {
           body += `<div class="drawer-contact-row">
             <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -781,8 +1107,6 @@
             <span style="color:var(--info-text)">${e.email}</span>
           </div>`;
         });
-
-        // Téléphones
         (c.phones || []).forEach(p => {
           body += `<div class="drawer-contact-row">
             <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -791,7 +1115,6 @@
             <span>${p.number}${p.type ? `<span style="font-size:11px;color:var(--text-tertiary);margin-left:5px;">(${formatPhoneType(p.type)})</span>` : ''}</span>
           </div>`;
         });
-
         body += `</div>`;
       });
       body += `</div>`;
@@ -812,6 +1135,12 @@
   }
 
   // ── Helpers ─────────────────────────────────────────────
+  /** Capitalise les mots séparés par espace ou tiret */
+  function formatLabel(str) {
+    if (!str) return str;
+    return str.replace(/(^|[\s-])(\S)/g, (m, sep, c) => sep + c.toUpperCase());
+  }
+
   function setLoading(containerId) {
     document.getElementById(containerId).innerHTML =
       `<div class="loading-state"><div class="spinner"></div><p>Recherche en cours…</p></div>`;
@@ -835,6 +1164,3 @@
 
 </body>
 </html>
-
-
-

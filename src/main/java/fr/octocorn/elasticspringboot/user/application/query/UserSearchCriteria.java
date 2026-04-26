@@ -1,4 +1,4 @@
-package fr.octocorn.elasticspringboot.user.application;
+package fr.octocorn.elasticspringboot.user.application.query;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;

@@ -1,12 +1,11 @@
 package fr.octocorn.elasticspringboot.user.infrastructure.elasticsearch;
 
 
+import fr.octocorn.elasticspringboot.infrastructure.geo.CoordinatesLookup;
 import fr.octocorn.elasticspringboot.user.domain.UserRepository;
 import fr.octocorn.elasticspringboot.user.domain.model.User;
 import fr.octocorn.elasticspringboot.user.domain.model.UserJob;
-import fr.octocorn.elasticspringboot.user.domain.model.contact.Address;
-import fr.octocorn.elasticspringboot.user.domain.model.contact.ContactInfo;
-import fr.octocorn.elasticspringboot.user.domain.model.contact.ContactType;
+import fr.octocorn.elasticspringboot.user.domain.model.contact.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -25,8 +24,11 @@ public class UserIndexer {
 
     private final UserRepository userRepository;
     private final UserSearchRepository userSearchRepository;
+    private final CoordinatesLookup coordinatesLookup;
 
-    /** * Synchronise l'ensemble des utilisateurs existants vers Elasticsearch par batch de 500. */
+    /**
+     * Synchronise l'ensemble des utilisateurs existants vers Elasticsearch par batch de 500.
+     */
     public void synchronizeAll() {
         int page = 0;
         final int batchSize = 500;
@@ -43,7 +45,9 @@ public class UserIndexer {
         } while (batch.hasNext());
     }
 
-    /**     * Indexe ou met à jour un utilisateur dans Elasticsearch.     *     * @param userId identifiant de l'utilisateur à indexer     */
+    /**
+     * Indexe ou met à jour un utilisateur dans Elasticsearch.     *     * @param userId identifiant de l'utilisateur à indexer
+     */
     public void index(UUID userId) {
         userRepository.findById(userId).ifPresentOrElse(
                 user -> {
@@ -54,21 +58,19 @@ public class UserIndexer {
         );
     }
 
-    /**     * Supprime un utilisateur de l'index Elasticsearch.     *     * @param userId identifiant de l'utilisateur à supprimer     */
+    /**
+     * Supprime un utilisateur de l'index Elasticsearch.     *     * @param userId identifiant de l'utilisateur à supprimer
+     */
     public void delete(UUID userId) {
         userSearchRepository.deleteById(userId);
         log.debug("[UserIndexer] Utilisateur {} supprimé de l'index.", userId);
     }
 
     private GeoPoint resolveGeoPoint(Address address) {
-        if (address == null) return null;
-        try {
-            double lat = address.getLatitude();
-            double lon = address.getLongitude();
-            return new GeoPoint(lat, lon);
-        } catch (Exception e) {
-            return null;
-        }
+        if (address == null || address.getPostalCode() == null) return null;
+        return coordinatesLookup.resolve(address.getPostalCode())
+                .map(c -> new GeoPoint(c.latitude(), c.longitude()))
+                .orElse(null);
     }
 
     private UserDocument toDocument(User user) {
@@ -78,16 +80,19 @@ public class UserIndexer {
 
         Address address = workPrimary
                 .flatMap(c -> c.getAddresses().stream().findFirst())
-                .orElse(null);
+                .orElseGet(() -> user.getContactInfos().stream()
+                        .flatMap(c -> c.getAddresses().stream())
+                        .findFirst()
+                        .orElse(null));
 
         List<String> emails = user.getContactInfos().stream()
                 .flatMap(c -> c.getEmails().stream())
-                .map(e -> e.getEmail())
+                .map(Email::getEmail)
                 .toList();
 
         List<String> phones = user.getContactInfos().stream()
                 .flatMap(c -> c.getPhones().stream())
-                .map(p -> p.getNumber())
+                .map(Phone::getNumber)
                 .toList();
 
         Optional<UserJob> primaryJob = user.getUserJobs().stream()

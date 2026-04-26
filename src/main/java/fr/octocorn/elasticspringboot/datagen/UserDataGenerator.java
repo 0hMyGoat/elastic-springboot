@@ -202,8 +202,6 @@ public class UserDataGenerator {
                 .state(row.state())
                 .country("Canada")
                 .contactInfo(contactInfo)
-                .latitude(Double.parseDouble(row.latitude()))
-                .longitude(Double.parseDouble(row.longitude()))
                 .build();
 
         List<Phone> phones = new ArrayList<>();

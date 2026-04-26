@@ -1,7 +1,7 @@
 package fr.octocorn.elasticspringboot.user.infrastructure.amqp;
 
 
-import fr.octocorn.elasticspringboot.infrastructure.config.RabbitMQConfig;
+import fr.octocorn.elasticspringboot.infrastructure.rabbitmq.RabbitMQConfig;
 import fr.octocorn.elasticspringboot.user.infrastructure.elasticsearch.UserIndexer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

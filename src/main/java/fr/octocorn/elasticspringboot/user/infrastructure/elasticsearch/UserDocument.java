@@ -26,10 +26,10 @@ public class UserDocument {
     @Field(type = FieldType.Text)
     private String lastName;
 
-    @Field(type = FieldType.Keyword)
+    @Field(type = FieldType.Keyword, normalizer = "lowercase")
     private String city;
 
-    @Field(type = FieldType.Keyword)
+    @Field(type = FieldType.Keyword, normalizer = "lowercase")
     private String postalCode;
 
     @GeoPointField

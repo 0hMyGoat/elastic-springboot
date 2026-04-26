@@ -25,9 +25,13 @@ public class UserSearchQueryBuilder {
     private Query buildQuery(UserSearchCriteria criteria) {
         BoolQuery.Builder bool = new BoolQuery.Builder();
 
-        ajouterRechercheLibre(bool, criteria.query());
-        ajouterFiltreFuzzy(bool, "firstName", criteria.firstName());
-        ajouterFiltreFuzzy(bool, "lastName", criteria.lastName());
+        if (!estVide(criteria.query())) {
+            ajouterRechercheLibre(bool, criteria.query());
+        } else {
+            ajouterFiltreFuzzy(bool, "firstName", criteria.firstName());
+            ajouterFiltreFuzzy(bool, "lastName", criteria.lastName());
+        }
+
         ajouterFiltreExact(bool, "city", criteria.city());
         ajouterFiltreExact(bool, "postalCode", criteria.postalCode());
         ajouterFiltreExact(bool, "jobName", criteria.jobName());
@@ -66,4 +70,3 @@ public class UserSearchQueryBuilder {
         return valeur == null || valeur.isBlank();
     }
 }
-

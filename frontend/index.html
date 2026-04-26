@@ -828,14 +828,25 @@
   let mapJobId = '';
   let mapSectorId = '';
 
-  const ZOOM_CITY        = 8;   // zoom ≤ 8  → CITY
-  const ZOOM_POSTAL_CODE = 12;  // zoom 9–12 → POSTAL_CODE
-                                 // zoom ≥ 13 → INDIVIDUAL
+  const ZOOM_CITY        = 10;  // zoom ≤ 10 → CITY
+  const ZOOM_POSTAL_CODE = 13;  // zoom 11–13 → POSTAL_CODE
+                                 // zoom ≥ 14 → INDIVIDUAL
 
   function getPrecision(zoom) {
-    if (zoom >= 13) return 'INDIVIDUAL';
-    if (zoom >= 9)  return 'POSTAL_CODE';
+    if (zoom >= 14) return 'INDIVIDUAL';
+    if (zoom >= 11) return 'POSTAL_CODE';
     return 'CITY';
+  }
+
+  /**
+   * Seuil minimum de personnes par cluster pour affichage.
+   * Évite la pollution visuelle aux vues panoramiques.
+   */
+  function getMinCount(zoom) {
+    if (zoom <= 6)  return 100;  // province entière → grandes villes seulement
+    if (zoom <= 8)  return 20;   // région → villes moyennes
+    if (zoom <= 10) return 5;    // agglo → tous les bourgs notables
+    return 1;                    // POSTAL_CODE / INDIVIDUAL → tout
   }
 
   function getPrecisionLabel(p) {
@@ -845,7 +856,7 @@
   function initMap() {
     if (mapInstance) return;
 
-    mapInstance = L.map('leaflet-map', { zoomControl: true })
+    mapInstance = L.map('leaflet-map', { zoomControl: true, minZoom: 5, maxZoom: 18 })
         .setView([53.0, -72.0], 6);   // Centre du Québec
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
@@ -905,7 +916,13 @@
     mapMarkers.forEach(m => mapInstance.removeLayer(m));
     mapMarkers = [];
 
+    const zoom     = mapInstance.getZoom();
+    const minCount = getMinCount(zoom);
+
     points.forEach(p => {
+      // ── Filtrage côté client : masquer les micro-clusters selon le zoom ──
+      if (precision !== 'INDIVIDUAL' && p.count < minCount) return;
+
       let marker;
       if (precision === 'INDIVIDUAL') {
         const icon = L.divIcon({
@@ -918,20 +935,23 @@
         marker.bindTooltip(formatLabel(p.label), { direction: 'top', offset: [0, -8] });
         marker.on('click', e => { L.DomEvent.stopPropagation(e); openDrawer(p.userId); });
       } else {
-        // Rayon proportionnel au nombre de personnes
-        const r = Math.round(Math.min(10 + Math.sqrt(p.count) * 2.2, 42));
-        const fontSize = Math.max(9, Math.min(14, r / 2.2)).toFixed(0);
-        const label = p.count > 999 ? '999+' : p.count;
+        // Échelle log : différencie bien les petites/grandes villes
+        // count=5 → r=14  count=100 → r=23  count=2000 → r=33  count=10000 → r=38
+        const r = Math.round(Math.min(9 + Math.log1p(p.count) * 3.5, 38));
+        const fontSize = Math.max(9, Math.min(13, r / 2.4)).toFixed(0);
+        const labelTxt = p.count >= 10000 ? `${(p.count/1000).toFixed(0)}k`
+                       : p.count >= 1000  ? `${(p.count/1000).toFixed(1)}k`
+                       : p.count;
         const icon = L.divIcon({
           className: 'map-cluster-icon',
           html: `<div class="map-cluster-inner" style="width:${r*2}px;height:${r*2}px;">
-                   <span style="font-size:${fontSize}px;">${label}</span>
+                   <span style="font-size:${fontSize}px;">${labelTxt}</span>
                  </div>`,
           iconSize: [r * 2, r * 2],
           iconAnchor: [r, r]
         });
         marker = L.marker([p.lat, p.lon], { icon });
-        const tooltip = `<strong>${formatLabel(p.label)}</strong><br>${p.count} personne${p.count > 1 ? 's' : ''}`;
+        const tooltip = `<strong>${formatLabel(p.label)}</strong><br>${p.count.toLocaleString('fr-FR')} personne${p.count > 1 ? 's' : ''}`;
         marker.bindTooltip(tooltip, { direction: 'top', offset: [0, -r - 4] });
         marker.on('click', e => {
           L.DomEvent.stopPropagation(e);

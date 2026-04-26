@@ -41,5 +41,11 @@ public class Address {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "contact_info_id", nullable = false)
     private ContactInfo contactInfo;
+
+    @Column(precision = 10)
+    private Double latitude;
+
+    @Column(precision = 10)
+    private Double longitude;
 }
 

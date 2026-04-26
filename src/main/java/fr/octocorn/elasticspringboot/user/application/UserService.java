@@ -3,6 +3,7 @@ package fr.octocorn.elasticspringboot.user.application;
 import fr.octocorn.elasticspringboot.user.application.command.CreateUserCommand;
 import fr.octocorn.elasticspringboot.user.application.command.UpdateUserCommand;
 import fr.octocorn.elasticspringboot.user.application.view.UserView;
+import fr.octocorn.elasticspringboot.user.domain.event.UserSavedEvent;
 import fr.octocorn.elasticspringboot.user.domain.model.User;
 import fr.octocorn.elasticspringboot.user.domain.UserRepository;
 import fr.octocorn.elasticspringboot.user.domain.exception.UserNotFoundException;
@@ -23,6 +24,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final UserEventPublisher eventPublisher;
 
     /**
      * Retourne la liste paginée des utilisateurs.
@@ -54,6 +56,7 @@ public class UserService {
     public UserView create(CreateUserCommand command) {
         User user = userMapper.toEntity(command);
         user.setRegisteredAt(LocalDateTime.now());
+        eventPublisher.onUserSaved(new UserSavedEvent(user.getId()));
         return userMapper.toView(userRepository.save(user));
     }
 
@@ -70,6 +73,7 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
         userMapper.updateEntity(command, user);
+        eventPublisher.onUserSaved(new UserSavedEvent(user.getId()));
         return userMapper.toView(userRepository.save(user));
     }
 
@@ -85,6 +89,7 @@ public class UserService {
             throw new UserNotFoundException(id);
         }
         userRepository.deleteById(id);
+        eventPublisher.publishDelete(id);
     }
 }
 

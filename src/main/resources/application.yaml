@@ -28,7 +28,13 @@ spring:
     elasticsearch:
       repositories:
         enabled: true
+        bootstrap-mode: default
 
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
 # Logging
 logging:
   level:
@@ -58,8 +64,3 @@ management:
     health:
       show-details: always
 
-rabbitmq:
-  host: ${RABBITMQ_HOST:localhost}
-  port: ${RABBITMQ_PORT:5672}
-  username: ${RABBITMQ_USER:guest}
-  password: ${RABBITMQ_PASSWORD:guest}

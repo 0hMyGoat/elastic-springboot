@@ -68,6 +68,24 @@ services:
       retries: 5
       start_period: 40s
 
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: rabbitmq-springboot
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"       # AMQP
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"  # UI de gestion
+    networks:
+      - springboot-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
 volumes:
   elasticsearch_data:
     driver: local

@@ -1,7 +1,7 @@
 package fr.octocorn.elasticspringboot.datagen;
 
-import fr.octocorn.elasticspringboot.job.sector.Sector;
-import fr.octocorn.elasticspringboot.job.sector.SectorRepository;
+import fr.octocorn.elasticspringboot.job.domain.sector.Sector;
+import fr.octocorn.elasticspringboot.job.domain.sector.SectorRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;

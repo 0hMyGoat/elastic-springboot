@@ -1,9 +1,11 @@
 package fr.octocorn.elasticspringboot.datagen;
 
-import fr.octocorn.elasticspringboot.job.job.Job;
-import fr.octocorn.elasticspringboot.job.job.JobRepository;
-import fr.octocorn.elasticspringboot.user.UserRepository;
-import fr.octocorn.elasticspringboot.user.model.*;
+import fr.octocorn.elasticspringboot.job.domain.job.Job;
+import fr.octocorn.elasticspringboot.job.domain.job.JobRepository;
+import fr.octocorn.elasticspringboot.user.domain.*;
+import fr.octocorn.elasticspringboot.user.domain.model.User;
+import fr.octocorn.elasticspringboot.user.domain.model.UserJob;
+import fr.octocorn.elasticspringboot.user.domain.model.contact.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.datafaker.Faker;
@@ -234,8 +236,8 @@ public class UserDataGenerator {
     // -------------------------------------------------------------------------
 
     private List<UserJob> generateUserJobs(User user,
-                                            Map<String, List<Job>> jobsBySector,
-                                            List<String> sectorCodes) {
+                                           Map<String, List<Job>> jobsBySector,
+                                           List<String> sectorCodes) {
         int     jobCount   = pickJobCount();
         boolean sameSector = random.nextInt(100) >= 10;
 

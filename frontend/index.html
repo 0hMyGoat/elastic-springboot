@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Annuaire</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #1e2229;
+      --surface: #2a2e36;
+      --surface-alt: #31363f;
+      --border: rgba(255,255,255,0.07);
+      --border-strong: rgba(255,255,255,0.15);
+      --text-primary: #eef0f4;
+      --text-secondary: #9aa0ad;
+      --text-tertiary: #5e6472;
+      --accent: rgb(193,84,81);
+      --accent-hover: rgb(172,68,65);
+      --accent-light: rgba(193,84,81,0.15);
+      --accent-text: rgb(240,160,158);
+      --warn-bg: rgba(193,84,81,0.12);
+      --warn-text: rgb(240,160,158);
+      --info-bg: rgba(100,140,200,0.12);
+      --info-text: #90b4e8;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+      --shadow-sm: 0 1px 4px rgba(0,0,0,0.35);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.5);
+    }
+
+    html { font-size: 16px; }
+    body { font-family: 'Montserrat', sans-serif; background: var(--bg); color: var(--text-primary); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+
+    .layout { display: flex; min-height: 100vh; }
+
+    .sidebar { width: 260px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 28px 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+    .sidebar-brand { padding: 0 24px 28px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+    .brand-label { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-tertiary); font-weight: 500; margin-bottom: 4px; }
+    .brand-title { font-family: 'Montserrat', sans-serif; font-size: 26px; line-height: 1.1; color: var(--text-primary); }
+    .nav-section { padding: 0 16px; margin-bottom: 4px; }
+    .nav-label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary); font-weight: 500; padding: 0 8px; margin-bottom: 6px; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: var(--radius-md); font-size: 14px; color: var(--text-secondary); cursor: pointer; transition: background 0.12s, color 0.12s; border: none; background: none; width: 100%; text-align: left; font-family: inherit; margin-bottom: 2px; }
+    .nav-item:hover { background: var(--surface-alt); color: var(--text-primary); }
+    .nav-item.active { background: var(--accent-light); color: var(--accent-text); font-weight: 500; }
+    .nav-icon { width: 18px; height: 18px; flex-shrink: 0; opacity: 0.7; }
+    .nav-item.active .nav-icon { opacity: 1; }
+    .nav-badge { margin-left: auto; font-size: 10px; background: var(--warn-bg); color: var(--warn-text); padding: 2px 7px; border-radius: 20px; font-weight: 500; }
+    .sidebar-footer { margin-top: auto; padding: 20px 24px 0; border-top: 1px solid var(--border); }
+    .footer-info { font-size: 12px; color: var(--text-tertiary); line-height: 1.6; }
+
+    .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 32px; display: flex; align-items: center; gap: 16px; position: sticky; top: 0; z-index: 10; }
+    .topbar-title { font-size: 15px; font-weight: 500; color: var(--text-primary); }
+    .topbar-sep { color: var(--border-strong); margin: 0 4px; }
+    .topbar-sub { font-size: 14px; color: var(--text-secondary); }
+    .topbar-actions { margin-left: auto; display: flex; gap: 8px; }
+    .content { padding: 32px; flex: 1; }
+
+    .panel { display: none; animation: fadeIn 0.18s ease; }
+    .panel.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+    .search-hero { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 28px 32px; margin-bottom: 24px; box-shadow: var(--shadow-sm); }
+    .search-hero-label { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary); font-weight: 500; margin-bottom: 12px; }
+    .search-row { display: flex; gap: 10px; }
+    .search-input { flex: 1; padding: 12px 18px; font-size: 15px; border: 1.5px solid var(--border); border-radius: var(--radius-lg); background: var(--bg); color: var(--text-primary); font-family: inherit; transition: border-color 0.15s, box-shadow 0.15s; outline: none; }
+    .search-input::placeholder { color: var(--text-tertiary); }
+    .search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(193,84,81,0.1); }
+    .hint { font-size: 12px; color: var(--text-tertiary); margin-top: 10px; }
+
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 11px 20px; border-radius: var(--radius-lg); font-size: 14px; font-weight: 500; cursor: pointer; border: none; font-family: inherit; transition: all 0.15s; white-space: nowrap; }
+    .btn-primary { background: rgb(193,84,81); color: #fff; font-weight: 600; letter-spacing: 0.02em; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-primary:active { transform: scale(0.98); }
+    .btn-ghost { background: none; color: var(--text-secondary); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: var(--surface-alt); color: var(--text-primary); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .filters-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 28px 32px; margin-bottom: 24px; box-shadow: var(--shadow-sm); }
+    .filters-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+    .filters-title { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+    .divider { height: 1px; background: var(--border); margin: 20px 0; }
+    .section-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--text-tertiary); font-weight: 500; margin-bottom: 12px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field label { font-size: 12px; color: var(--text-secondary); font-weight: 500; }
+    .field input, .field select { padding: 10px 14px; font-size: 14px; border: 1.5px solid var(--border); border-radius: var(--radius-md); background: var(--bg); color: var(--text-primary); font-family: inherit; transition: border-color 0.15s, box-shadow 0.15s; outline: none; appearance: none; }
+    .field input:focus, .field select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(193,84,81,0.1); background: var(--surface); }
+    .field input::placeholder { color: var(--text-tertiary); }
+    .select-wrap { position: relative; }
+    .select-wrap::after { content: ''; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid var(--text-tertiary); pointer-events: none; }
+    .select-wrap select { width: 100%; padding-right: 32px; cursor: pointer; }
+    .filters-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+
+    .results-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .results-count { font-size: 13px; color: var(--text-secondary); }
+    .results-count strong { color: var(--text-primary); }
+    .result-list { display: flex; flex-direction: column; gap: 8px; }
+    .result-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px 20px; display: flex; align-items: center; gap: 16px; cursor: pointer; transition: border-color 0.12s, box-shadow 0.12s, transform 0.1s; }
+    .result-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow-md); transform: translateY(-1px); }
+    .avatar { width: 42px; height: 42px; border-radius: 50%; background: var(--accent-light); color: var(--accent-text); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; flex-shrink: 0; }
+    .result-info { flex: 1; min-width: 0; }
+    .result-name { font-size: 14px; font-weight: 500; color: var(--text-primary); margin-bottom: 4px; }
+    .result-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+    .tag { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 11px; background: var(--surface-alt); color: var(--text-secondary); border: 1px solid var(--border); }
+    .tag.accent { background: var(--accent-light); color: var(--accent-text); border-color: transparent; }
+    .result-contact { text-align: right; flex-shrink: 0; }
+    .result-email { font-size: 12px; color: var(--info-text); margin-bottom: 3px; }
+    .result-phone { font-size: 12px; color: var(--text-tertiary); }
+    .chevron-right { color: var(--border-strong); flex-shrink: 0; }
+
+    .pagination { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 24px; flex-wrap: wrap; }
+    .page-btn { width: 34px; height: 34px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); font-size: 13px; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; font-family: inherit; transition: all 0.1s; }
+    .page-btn:hover:not(:disabled) { border-color: var(--border-strong); color: var(--text-primary); }
+    .page-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+    .page-btn:disabled { opacity: 0.35; cursor: default; }
+
+    .empty-state { text-align: center; padding: 56px 24px; color: var(--text-tertiary); }
+    .empty-icon { width: 52px; height: 52px; border-radius: 50%; background: var(--surface-alt); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
+    .empty-title { font-size: 15px; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; }
+    .empty-sub { font-size: 13px; }
+
+    .loading-state { text-align: center; padding: 56px 24px; color: var(--text-tertiary); }
+    .spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 12px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-state { text-align: center; padding: 40px 24px; background: var(--warn-bg); border: 1px solid rgba(193,84,81,0.2); border-radius: var(--radius-lg); color: var(--warn-text); font-size: 13px; }
+
+    .map-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xl); overflow: hidden; box-shadow: var(--shadow-sm); }
+    .map-topbar { padding: 18px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+    .map-area { min-height: 400px; background: repeating-linear-gradient(0deg, var(--border) 0, var(--border) 1px, transparent 1px, transparent 40px), repeating-linear-gradient(90deg, var(--border) 0, var(--border) 1px, transparent 1px, transparent 40px), var(--bg); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
+    .map-badge { display: inline-flex; align-items: center; gap: 7px; padding: 8px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; font-size: 13px; color: var(--text-secondary); box-shadow: var(--shadow-sm); }
+    .dot-pulse { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.8); } }
+    .map-desc { font-size: 13px; color: var(--text-tertiary); text-align: center; max-width: 280px; line-height: 1.6; }
+
+    .stats-bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px 20px; }
+    .stat-label { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 6px; }
+    .stat-value { font-size: 28px; color: var(--text-primary); font-weight: 500; }
+    .stat-value.loading { color: var(--text-tertiary); font-size: 16px; }
+
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .content { padding: 20px; }
+      .grid-2 { grid-template-columns: 1fr; }
+      .stats-bar { grid-template-columns: 1fr; }
+      .result-contact { display: none; }
+    }
+
+    option { background: #2a2e36; color: #eef0f4; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--surface-alt); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
+  </style>
+</head>
+<body>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <p class="brand-label">Système</p>
+      <p class="brand-title">Annuaire</p>
+    </div>
+
+    <div class="nav-section">
+      <p class="nav-label">Recherche</p>
+      <button class="nav-item active" onclick="switchPanel('libre', this)">
+        <svg class="nav-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6">
+          <circle cx="7.5" cy="7.5" r="5"/><path d="m13 13 3 3"/>
+        </svg>
+        Recherche libre
+      </button>
+      <button class="nav-item" onclick="switchPanel('criteres', this)">
+        <svg class="nav-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6">
+          <path d="M2 4h14M5 9h8M8 14h2"/>
+        </svg>
+        Par critères
+      </button>
+      <button class="nav-item" onclick="switchPanel('carte', this)">
+        <svg class="nav-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6">
+          <path d="M9 1C6.24 1 4 3.24 4 6c0 4.13 5 11 5 11s5-6.87 5-11c0-2.76-2.24-5-5-5z"/>
+          <circle cx="9" cy="6" r="2"/>
+        </svg>
+        Carte du Québec
+        <span class="nav-badge">Bientôt</span>
+      </button>
+    </div>
+
+    <div class="divider" style="margin: 20px 16px;"></div>
+
+    <div class="nav-section">
+      <p class="nav-label">Référentiels</p>
+      <button class="nav-item" onclick="switchPanel('secteurs', this)">
+        <svg class="nav-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6">
+          <rect x="2" y="3" width="14" height="12" rx="2"/>
+          <path d="M6 3v12M2 7h4M2 11h4"/>
+        </svg>
+        Secteurs
+      </button>
+      <button class="nav-item" onclick="switchPanel('metiers', this)">
+        <svg class="nav-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6">
+          <circle cx="9" cy="6" r="3"/><path d="M3 16c0-3.31 2.69-6 6-6s6 2.69 6 6"/>
+        </svg>
+        Métiers
+      </button>
+    </div>
+
+    <div class="sidebar-footer">
+      <p class="footer-info">API connectée sur<br><strong>localhost:8080/api</strong></p>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <span class="topbar-title">Annuaire</span>
+      <span class="topbar-sep">/</span>
+      <span class="topbar-sub" id="topbar-sub">Recherche libre</span>
+    </header>
+
+    <div class="content">
+      <div class="stats-bar">
+        <div class="stat-card">
+          <p class="stat-label">Utilisateurs</p>
+          <p class="stat-value loading" id="stat-users">…</p>
+        </div>
+        <div class="stat-card">
+          <p class="stat-label">Secteurs</p>
+          <p class="stat-value loading" id="stat-sectors">…</p>
+        </div>
+        <div class="stat-card">
+          <p class="stat-label">Métiers</p>
+          <p class="stat-value loading" id="stat-jobs">…</p>
+        </div>
+      </div>
+
+      <!-- Panel: Libre -->
+      <div class="panel active" id="panel-libre">
+        <div class="search-hero">
+          <p class="search-hero-label">Recherche plein-texte</p>
+          <div class="search-row">
+            <input class="search-input" type="text" id="libre-input"
+              placeholder="Prénom, nom, métier, secteur, ville… (tolérance aux fautes)" />
+            <button class="btn btn-primary" id="btn-libre" onclick="runLibre()">
+              <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="6" cy="6" r="4.5"/><path d="m10.5 10.5 3 3"/>
+              </svg>
+              Rechercher
+            </button>
+          </div>
+          <p class="hint">Recherche sur prénom, nom, métier, secteur et ville avec fuzziness AUTO.</p>
+        </div>
+        <div id="results-libre">
+          <div class="empty-state">
+            <div class="empty-icon">
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--text-tertiary)">
+                <circle cx="9" cy="9" r="7"/><path d="m16 16 4 4"/>
+              </svg>
+            </div>
+            <p class="empty-title">Aucune recherche lancée</p>
+            <p class="empty-sub">Saisissez un terme pour commencer.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel: Critères -->
+      <div class="panel" id="panel-criteres">
+        <div class="filters-card">
+          <div class="filters-header">
+            <p class="filters-title">Filtres de recherche</p>
+            <button class="btn btn-ghost" style="font-size:13px;padding:7px 14px;" onclick="resetCriteres()">Réinitialiser</button>
+          </div>
+
+          <p class="section-label">Identité</p>
+          <div class="grid-2">
+            <div class="field">
+              <label>Prénom</label>
+              <input type="text" id="c-fn" placeholder="Evan" />
+            </div>
+            <div class="field">
+              <label>Nom</label>
+              <input type="text" id="c-ln" placeholder="Picard" />
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <p class="section-label">Localisation</p>
+          <div class="grid-2">
+            <div class="field">
+              <label>Ville</label>
+              <input type="text" id="c-city" placeholder="Sainte-Thérèse" />
+            </div>
+            <div class="field">
+              <label>Code postal</label>
+              <input type="text" id="c-postal" placeholder="J7E3E7" />
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <p class="section-label">Activité</p>
+          <div class="grid-2">
+            <div class="field">
+              <label>Secteur</label>
+              <div class="select-wrap">
+                <select id="c-sector">
+                  <option value="">Tous les secteurs</option>
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label>Métier</label>
+              <div class="select-wrap">
+                <select id="c-job">
+                  <option value="">Tous les métiers</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="filters-actions">
+            <button class="btn btn-primary" id="btn-criteres" onclick="runCriteres()">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="5.5" cy="5.5" r="4"/><path d="m9.5 9.5 3 3"/>
+              </svg>
+              Appliquer les filtres
+            </button>
+          </div>
+        </div>
+        <div id="results-criteres">
+          <div class="empty-state">
+            <div class="empty-icon">
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--text-tertiary)">
+                <path d="M2 5h20M6 11h12M10 17h4"/>
+              </svg>
+            </div>
+            <p class="empty-title">Définissez vos critères</p>
+            <p class="empty-sub">Renseignez au moins un filtre puis lancez la recherche.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel: Carte -->
+      <div class="panel" id="panel-carte">
+        <div class="map-card">
+          <div class="map-topbar">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+              <path d="M8 1C5.24 1 3 3.24 3 6c0 4.13 5 9 5 9s5-4.87 5-9c0-2.76-2.24-5-5-5z"/>
+              <circle cx="8" cy="6" r="2"/>
+            </svg>
+            <span style="font-size:14px;font-weight:500;">Recherche géographique — Québec</span>
+            <span style="margin-left:auto;font-size:12px;background:var(--warn-bg);color:var(--warn-text);padding:3px 10px;border-radius:20px;">En développement</span>
+          </div>
+          <div class="map-area">
+            <div class="map-badge"><span class="dot-pulse"></span> Fonctionnalité à venir</div>
+            <p class="map-desc">Sélectionnez une zone sur la carte du Québec pour filtrer les utilisateurs par région géographique.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel: Secteurs -->
+      <div class="panel" id="panel-secteurs">
+        <div id="results-secteurs">
+          <div class="loading-state"><div class="spinner"></div><p>Chargement…</p></div>
+        </div>
+      </div>
+
+      <!-- Panel: Métiers -->
+      <div class="panel" id="panel-metiers">
+        <div id="results-metiers">
+          <div class="loading-state"><div class="spinner"></div><p>Chargement…</p></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+  // ── Config ──────────────────────────────────────────────
+  const API = '';  // proxié par nginx vers localhost:8080
+
+  // ── État ────────────────────────────────────────────────
+  let allJobs = [];
+
+  // ── Navigation ──────────────────────────────────────────
+  function switchPanel(id, el) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('panel-' + id).classList.add('active');
+    el.classList.add('active');
+    const labels = {
+      libre: 'Recherche libre', criteres: 'Par critères',
+      carte: 'Carte du Québec', secteurs: 'Secteurs', metiers: 'Métiers'
+    };
+    document.getElementById('topbar-sub').textContent = labels[id] || id;
+  }
+
+  // ── Initialisation ──────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', () => {
+    loadReferentiels();
+    loadStats();
+    document.getElementById('libre-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') runLibre();
+    });
+  });
+
+  // ── Référentiels ────────────────────────────────────────
+  async function loadReferentiels() {
+    try {
+      const [sectorsData, jobsData] = await Promise.all([
+        fetch(`${API}/api/sectors?size=500&sort=name,asc`).then(r => r.json()),
+        fetch(`${API}/api/jobs?size=500&sort=name,asc`).then(r => r.json())
+      ]);
+
+      const sectors = sectorsData.content || [];
+      allJobs = jobsData.content || [];
+
+      // Peupler le select secteurs
+      const sectorSelect = document.getElementById('c-sector');
+      sectors.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.id;
+        opt.textContent = s.name;
+        sectorSelect.appendChild(opt);
+      });
+
+      // Peupler le select métiers
+      populateJobs('');
+
+      // Filtrer les métiers au changement de secteur
+      sectorSelect.addEventListener('change', () => {
+        populateJobs(sectorSelect.value);
+      });
+
+      // Afficher les référentiels dans leurs panels
+      renderSecteurs(sectors);
+      renderMetiers(allJobs);
+
+    } catch (e) {
+      console.warn('Erreur chargement référentiels', e);
+    }
+  }
+
+  function populateJobs(sectorId) {
+    const jobSelect = document.getElementById('c-job');
+    const currentJobId = jobSelect.value;
+    jobSelect.innerHTML = '<option value="">Tous les métiers</option>';
+    const filtered = sectorId ? allJobs.filter(j => j.sectorId === sectorId) : allJobs;
+    filtered.forEach(j => {
+      const opt = document.createElement('option');
+      opt.value = j.id;
+      opt.textContent = j.name;
+      jobSelect.appendChild(opt);
+    });
+    if (currentJobId && filtered.find(j => j.id === currentJobId)) {
+      jobSelect.value = currentJobId;
+    }
+  }
+
+  function renderSecteurs(sectors) {
+    const container = document.getElementById('results-secteurs');
+    if (!sectors.length) { container.innerHTML = emptyHtml('Aucun secteur', ''); return; }
+    container.innerHTML = `
+      <div class="results-bar">
+        <span class="results-count"><strong>${sectors.length}</strong> secteur${sectors.length > 1 ? 's' : ''}</span>
+      </div>
+      <div class="result-list">
+        ${sectors.map(s => `
+          <div class="result-card">
+            <div class="result-info">
+              <div class="result-name">${s.name}</div>
+              <div class="result-tags"><span class="tag">${s.code}</span></div>
+            </div>
+          </div>`).join('')}
+      </div>`;
+  }
+
+  function renderMetiers(jobs) {
+    const container = document.getElementById('results-metiers');
+    if (!jobs.length) { container.innerHTML = emptyHtml('Aucun métier', ''); return; }
+    container.innerHTML = `
+      <div class="results-bar">
+        <span class="results-count"><strong>${jobs.length}</strong> métier${jobs.length > 1 ? 's' : ''}</span>
+      </div>
+      <div class="result-list">
+        ${jobs.map(j => `
+          <div class="result-card">
+            <div class="result-info">
+              <div class="result-name">${j.name}</div>
+              <div class="result-tags">
+                <span class="tag">${j.code}</span>
+                <span class="tag accent">${j.sectorName}</span>
+              </div>
+            </div>
+          </div>`).join('')}
+      </div>`;
+  }
+
+  // ── Stats ───────────────────────────────────────────────
+  async function loadStats() {
+    try {
+      const [usersRes, sectorsRes, jobsRes] = await Promise.all([
+        fetch(`${API}/api/users/search`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ size: 1 })
+        }).then(r => r.json()),
+        fetch(`${API}/api/sectors?size=1`).then(r => r.json()),
+        fetch(`${API}/api/jobs?size=1`).then(r => r.json())
+      ]);
+      document.getElementById('stat-users').textContent = (usersRes.totalElements || 0).toLocaleString('fr-FR');
+      document.getElementById('stat-sectors').textContent = sectorsRes.totalElements || 0;
+      document.getElementById('stat-jobs').textContent = jobsRes.totalElements || 0;
+      document.getElementById('stat-users').classList.remove('loading');
+      document.getElementById('stat-sectors').classList.remove('loading');
+      document.getElementById('stat-jobs').classList.remove('loading');
+    } catch (e) {
+      ['stat-users', 'stat-sectors', 'stat-jobs'].forEach(id => {
+        document.getElementById(id).textContent = '—';
+      });
+    }
+  }
+
+  // ── Recherche libre ─────────────────────────────────────
+  async function runLibre(page = 0) {
+    const q = document.getElementById('libre-input').value.trim();
+    if (!q) return;
+    const btn = document.getElementById('btn-libre');
+    btn.disabled = true;
+    setLoading('results-libre');
+    try {
+      const url = `${API}/api/users/search?query=${encodeURIComponent(q)}&page=${page}&size=20`;
+      const data = await fetch(url).then(r => r.json());
+      renderResults(data, 'results-libre', p => runLibre(p));
+    } catch (e) {
+      setError('results-libre');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // ── Recherche par critères ───────────────────────────────
+  async function runCriteres(page = 0) {
+    const body = { page, size: 20 };
+    const fn     = document.getElementById('c-fn').value.trim();
+    const ln     = document.getElementById('c-ln').value.trim();
+    const city   = document.getElementById('c-city').value.trim();
+    const postal = document.getElementById('c-postal').value.trim();
+    const sectorId = document.getElementById('c-sector').value;
+    const jobId    = document.getElementById('c-job').value;
+    if (fn) body.firstName = fn;
+    if (ln) body.lastName = ln;
+    if (city) body.city = city;
+    if (postal) body.postalCode = postal;
+    if (sectorId) body.sectorId = sectorId;
+    if (jobId) body.jobId = jobId;
+
+    const btn = document.getElementById('btn-criteres');
+    btn.disabled = true;
+    setLoading('results-criteres');
+    try {
+      const data = await fetch(`${API}/api/users/search`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      }).then(r => r.json());
+      renderResults(data, 'results-criteres', p => runCriteres(p));
+    } catch (e) {
+      setError('results-criteres');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function resetCriteres() {
+    ['c-fn','c-ln','c-city','c-postal'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('c-sector').value = '';
+    populateJobs('');
+    document.getElementById('results-criteres').innerHTML = emptyHtml('Définissez vos critères', 'Renseignez au moins un filtre puis lancez la recherche.');
+  }
+
+  // ── Rendu des résultats ─────────────────────────────────
+  function renderResults(page, containerId, onPageChange) {
+    const container = document.getElementById(containerId);
+    const users = page.content || [];
+    const total = page.totalElements || 0;
+    const totalPages = page.totalPages || 0;
+    const currentPage = page.number || 0;
+
+    if (!users.length) {
+      container.innerHTML = emptyHtml('Aucun résultat', 'Essayez d\'élargir vos critères.');
+      return;
+    }
+
+    let html = `
+      <div class="results-bar">
+        <span class="results-count"><strong>${total.toLocaleString('fr-FR')}</strong> utilisateur${total > 1 ? 's' : ''} trouvé${total > 1 ? 's' : ''}</span>
+      </div>
+      <div class="result-list">`;
+
+    users.forEach(u => {
+      const initials = (u.firstName?.[0] || '') + (u.lastName?.[0] || '');
+      const email = u.emails?.[0] || '';
+      const phone = u.phones?.[0] || '';
+      html += `
+        <div class="result-card">
+          <div class="avatar">${initials}</div>
+          <div class="result-info">
+            <div class="result-name">${u.firstName || ''} ${u.lastName || ''}</div>
+            <div class="result-tags">
+              ${u.city ? `<span class="tag">${u.city}</span>` : ''}
+              ${u.sectorName ? `<span class="tag accent">${u.sectorName}</span>` : ''}
+              ${u.jobName ? `<span class="tag">${u.jobName}</span>` : ''}
+            </div>
+          </div>
+          <div class="result-contact">
+            ${email ? `<div class="result-email">${email}</div>` : ''}
+            ${phone ? `<div class="result-phone">${phone}</div>` : ''}
+          </div>
+          <svg class="chevron-right" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="m5 2 4 5-4 5"/>
+          </svg>
+        </div>`;
+    });
+
+    html += `</div>`;
+    html += buildPagination(currentPage, totalPages, onPageChange);
+    container.innerHTML = html;
+  }
+
+  function buildPagination(current, total, onPageChange) {
+    if (total <= 1) return '';
+
+    const prevDisabled = current === 0 ? 'disabled' : '';
+    const nextDisabled = current >= total - 1 ? 'disabled' : '';
+
+    // Afficher au plus 7 boutons de pages
+    let pages = [];
+    const range = 2;
+    for (let i = 0; i < total; i++) {
+      if (i === 0 || i === total - 1 || (i >= current - range && i <= current + range)) {
+        pages.push(i);
+      }
+    }
+    // Dédupliquer et trier
+    pages = [...new Set(pages)].sort((a, b) => a - b);
+
+    let html = `<div class="pagination">
+      <button class="page-btn" ${prevDisabled} onclick="(${onPageChange.toString()})(${current - 1})">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m8 2-4 4 4 4"/></svg>
+      </button>`;
+
+    let last = -1;
+    pages.forEach(p => {
+      if (last !== -1 && p > last + 1) {
+        html += `<span style="color:var(--text-tertiary);padding:0 4px;">…</span>`;
+      }
+      html += `<button class="page-btn ${p === current ? 'active' : ''}" onclick="(${onPageChange.toString()})(${p})">${p + 1}</button>`;
+      last = p;
+    });
+
+    html += `<button class="page-btn" ${nextDisabled} onclick="(${onPageChange.toString()})(${current + 1})">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m4 2 4 4-4 4"/></svg>
+      </button>
+    </div>`;
+
+    return html;
+  }
+
+  // ── Helpers ─────────────────────────────────────────────
+  function setLoading(containerId) {
+    document.getElementById(containerId).innerHTML = `
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Recherche en cours…</p>
+      </div>`;
+  }
+
+  function setError(containerId) {
+    document.getElementById(containerId).innerHTML = `
+      <div class="error-state">
+        Impossible de contacter l'API. Vérifiez que Spring Boot est démarré sur le port 8080.
+      </div>`;
+  }
+
+  function emptyHtml(title, sub) {
+    return `<div class="empty-state">
+      <div class="empty-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--text-tertiary)">
+          <circle cx="9" cy="9" r="7"/><path d="m16 16 4 4"/>
+        </svg>
+      </div>
+      <p class="empty-title">${title}</p>
+      ${sub ? `<p class="empty-sub">${sub}</p>` : ''}
+    </div>`;
+  }
+</script>
+
+</body>
+</html>
+

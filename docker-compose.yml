@@ -86,6 +86,20 @@ services:
       retries: 5
       start_period: 40s
 
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-annuaire
+    ports:
+      - "${NGINX_PORT:-80}:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - springboot-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
 volumes:
   elasticsearch_data:
     driver: local

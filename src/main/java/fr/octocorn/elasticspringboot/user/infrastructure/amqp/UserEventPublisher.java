@@ -1,4 +1,4 @@
-package fr.octocorn.elasticspringboot.user.application;
+package fr.octocorn.elasticspringboot.user.infrastructure.amqp;
 
 
 import fr.octocorn.elasticspringboot.infrastructure.config.RabbitMQConfig;

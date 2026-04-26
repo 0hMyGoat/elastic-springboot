@@ -1,4 +1,4 @@
-package fr.octocorn.elasticspringboot.datagen;
+package fr.octocorn.elasticspringboot.infrastructure.datagen;
 
 /**
  * Référentiel des secteurs d'activité utilisé pour la génération de données.

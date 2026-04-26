@@ -8,6 +8,7 @@ import fr.octocorn.elasticspringboot.user.domain.model.User;
 import fr.octocorn.elasticspringboot.user.domain.UserRepository;
 import fr.octocorn.elasticspringboot.user.domain.exception.UserNotFoundException;
 import fr.octocorn.elasticspringboot.user.infrastructure.mapper.UserMapper;
+import fr.octocorn.elasticspringboot.user.infrastructure.amqp.UserEventPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

@@ -12,19 +12,18 @@ import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.stereotype.Service;
 import java.util.List;
-@SuppressWarnings("LossyEncoding")
 @Service
 @RequiredArgsConstructor
 public class UserSearchService {
     private final ElasticsearchOperations elasticsearchOperations;
     private final UserSearchQueryBuilder queryBuilder;
     /**
-     * Recherche des utilisateurs � partir des crit�res fournis.
-     * Les r�sultats proviennent directement de l''index Elasticsearch.
-     * Pour le d�tail complet d''un utilisateur, utiliser GET /users/{id}.
+     * Recherche des utilisateurs à partir des critères fournis.
+     * Les r�sultats proviennent directement de l'index Elasticsearch.
+     * Pour le détail complet d'un utilisateur, utiliser GET /users/{id}.
      *
-     * @param criteria crit�res de recherche
-     * @return page des r�sultats de recherche
+     * @param criteria critères de recherche
+     * @return page des résultats de recherche
      */
     public Page<UserSearchResult> search(@Valid UserSearchCriteria criteria) {
         NativeQuery nativeQuery = queryBuilder.build(criteria);

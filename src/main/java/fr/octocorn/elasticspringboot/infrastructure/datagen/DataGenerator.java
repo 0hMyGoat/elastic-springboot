@@ -1,4 +1,4 @@
-package fr.octocorn.elasticspringboot.datagen;
+package fr.octocorn.elasticspringboot.infrastructure.datagen;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

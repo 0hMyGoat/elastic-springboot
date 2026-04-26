@@ -1,4 +1,4 @@
-package fr.octocorn.elasticspringboot.datagen;
+package fr.octocorn.elasticspringboot.infrastructure.datagen;
 
 import fr.octocorn.elasticspringboot.job.domain.job.Job;
 import fr.octocorn.elasticspringboot.job.domain.job.JobRepository;

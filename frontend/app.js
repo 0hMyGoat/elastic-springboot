@@ -300,15 +300,7 @@ let mapDebounceTimer = null;
 let mapJobId = '';
 let mapSectorId = '';
 
-const ZOOM_CITY = 10;  // zoom ≤ 10 → CITY
-const ZOOM_POSTAL_CODE = 13;  // zoom 11–13 → POSTAL_CODE
-// zoom ≥ 14 → INDIVIDUAL
-
-function getPrecision(zoom) {
-    if (zoom >= 14) return 'INDIVIDUAL';
-    if (zoom >= 11) return 'POSTAL_CODE';
-    return 'CITY';
-}
+// zoom ≥ 14 → INDIVIDUAL (mode géohash pour zoom < 14)
 
 /**
  * Seuil minimum de personnes par cluster pour affichage.
@@ -318,11 +310,7 @@ function getMinCount(zoom) {
     if (zoom <= 6) return 100;  // province entière → grandes villes seulement
     if (zoom <= 8) return 20;   // région → villes moyennes
     if (zoom <= 10) return 5;    // agglo → tous les bourgs notables
-    return 1;                    // POSTAL_CODE / INDIVIDUAL → tout
-}
-
-function getPrecisionLabel(p) {
-    return {CITY: 'Regroupé par ville', POSTAL_CODE: 'Regroupé par code postal', INDIVIDUAL: 'Individuel'}[p] || p;
+    return 1;                    // geohash fine / INDIVIDUAL → tout
 }
 
 function initMap() {
@@ -364,39 +352,38 @@ async function loadMapClusters() {
     if (!mapInstance) return;
 
     const zoom = mapInstance.getZoom();
-    const precision = getPrecision(zoom);
-    document.getElementById('map-precision-label').textContent = getPrecisionLabel(precision);
+    const label = zoom >= 14 ? 'Individuel' : 'Regroupé par cellule';
+    document.getElementById('map-precision-label').textContent = label;
 
     const bounds = mapInstance.getBounds();
-    let url = `${API}/api/users/map/clusters?precision=${precision}`;
+    let url = `${API}/api/users/map/clusters?zoomLevel=${zoom}`;
     if (mapJobId) url += `&jobId=${mapJobId}`;
     if (mapSectorId) url += `&sectorId=${mapSectorId}`;
-    if (precision === 'INDIVIDUAL') {
+    if (zoom >= 14) {
         url += `&minLat=${bounds.getSouth()}&maxLat=${bounds.getNorth()}`
             + `&minLon=${bounds.getWest()}&maxLon=${bounds.getEast()}`;
     }
 
     try {
         const points = await fetch(url).then(r => r.json());
-        renderMapPoints(points, precision);
+        renderMapPoints(points, zoom);
     } catch (e) {
         console.error('[Map] Erreur chargement clusters', e);
     }
 }
 
-function renderMapPoints(points, precision) {
+function renderMapPoints(points, zoom) {
     mapMarkers.forEach(m => mapInstance.removeLayer(m));
     mapMarkers = [];
 
-    const zoom = mapInstance.getZoom();
     const minCount = getMinCount(zoom);
 
     points.forEach(p => {
         // ── Filtrage côté client : masquer les micro-clusters selon le zoom ──
-        if (precision !== 'INDIVIDUAL' && p.count < minCount) return;
+        if (zoom < 14 && p.count < minCount) return;
 
         let marker;
-        if (precision === 'INDIVIDUAL') {
+        if (zoom >= 14) {
             const icon = L.divIcon({
                 className: 'map-individual-icon',
                 html: `<div class="map-individual-dot"></div>`,
@@ -430,7 +417,7 @@ function renderMapPoints(points, precision) {
             marker.bindTooltip(tooltip, {direction: 'top', offset: [0, -r - 4]});
             marker.on('click', e => {
                 L.DomEvent.stopPropagation(e);
-                loadClusterUsers(precision, p.label, formatLabel(p.label), p.count);
+                loadClusterUsers(p.label, p.label, formatLabel(p.label), p.count);
             });
         }
         marker.addTo(mapInstance);
@@ -439,12 +426,12 @@ function renderMapPoints(points, precision) {
 }
 
 // ── Panneau latéral (liste des membres d'un cluster) ─────
-async function loadClusterUsers(precision, rawValue, displayLabel, count) {
+async function loadClusterUsers(geohashCell, rawValue, displayLabel, count) {
     openMapSidePanel(displayLabel, count);
     document.getElementById('map-side-content').innerHTML =
         `<div class="loading-state"><div class="spinner"></div><p>Chargement…</p></div>`;
 
-    let url = `${API}/api/users/map/cluster-users?precision=${precision}&value=${encodeURIComponent(rawValue)}`;
+    let url = `${API}/api/users/map/cluster-users?geohashCell=${encodeURIComponent(geohashCell)}`;
     if (mapJobId) url += `&jobId=${mapJobId}`;
     if (mapSectorId) url += `&sectorId=${mapSectorId}`;
 
